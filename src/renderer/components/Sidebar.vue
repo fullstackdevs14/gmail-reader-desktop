@@ -14,10 +14,16 @@
       span {{ item }}
       span.badge(v-if="counts[item] > 0") {{ counts[item] }}
       b-button.remove(icon-left="times-circle" @click="$emit('remove', item)")
+    .item.has-padding-2(
+      :class="{ selected: selected === 'orphans' }"
+      @click="$emit('select', 'orphans')"
+      )
+      span Orphan Messages
+      span.badge(v-if="orphanMsgCount > 0") {{ orphanMsgCount }}
     b-button.has-margin-top-4.is-full-width(
       type="is-info"
       icon-left="plus-circle"
-      @click="addAccount()"
+      @click="addEmail()"
       ) Add
     b-button.has-margin-top-3.is-full-width(
       icon-left="cog"
@@ -39,16 +45,6 @@
       .is-full-width.has-margin-top-2
         span.has-margin-right-2 Synced:
         span.has-text-weight-semibold.has-text-grey-lighter {{ syncedTime }}
-    .expired-list.has-margin-top-4(v-if="expiredEmails.length > 0")
-      .has-padding-2.has-margin-y-2 Expired Emails
-      .item.has-padding-2.has-text-grey-light(
-        :class="{ selected: selected === item }"
-        @click="$emit('select', item)"
-        v-for="item in expiredEmails"
-        )
-        span {{ item }}
-        span.badge(v-if="counts[item] > 0") {{ counts[item] }}
-        b-button.remove(icon-left="times-circle" @click="$emit('remove', item)")
 </template>
 
 <script>
@@ -65,8 +61,8 @@ export default {
       type: String,
       required: true
     },
-    expiredEmails: {
-      type: Array,
+    orphanMsgCount: {
+      type: Number,
       required: true
     }
   },
@@ -74,9 +70,7 @@ export default {
     ...mapState(['syncedAt']),
     ...mapState('config', ['sync', 'interval']),
     list() {
-      return Object.keys(this.counts).filter(
-        item => this.expiredEmails.indexOf(item) < 0
-      )
+      return Object.keys(this.counts)
     },
     allCount() {
       const counts = Object.values(this.counts)
@@ -87,7 +81,7 @@ export default {
     }
   },
   methods: mapActions({
-    addAccount: 'addAccount',
+    addEmail: 'addEmail',
     getAllMessages: 'getAllMessages'
   })
 }

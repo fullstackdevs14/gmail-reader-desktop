@@ -4,7 +4,7 @@
       sidebar(
         :counts="mailCounts"
         :selected="selected"
-        :expiredEmails="expiredEmails"
+        :orphanMsgCount="orphanMsgCount"
         @select="viewAccMessages"
         @remove="showConfirmDialog"
         @settings="view = 'settings'"
@@ -39,12 +39,12 @@
       )
       .modal-card
         header.modal-card-head
-          .modal-card-title Remove account
-        section.modal-card-body.has-text-grey-dark Do you want to remove this account?
+          .modal-card-title Remove email
+        section.modal-card-body.has-text-grey-dark Do you want to remove this email?
         footer.modal-card-foot
           b-button(
             type="is-danger"
-            @click="confirmRemoveAccount"
+            @click="confirmRemoveEmail"
             ) Yes
           b-button(outlined @click="showConfirm = false") No
 </template>
@@ -56,6 +56,8 @@ import MailList from '@/components/MailList.vue'
 import MailDetails from '@/components/MailDetails.vue'
 import Sidebar from '@/components/Sidebar.vue'
 import Settings from '@/components/Settings.vue'
+
+import { subscribeToChannel } from '@/services/ipc'
 
 export default {
   name: 'gmail-reader-desktop',
@@ -76,7 +78,7 @@ export default {
   computed: {
     ...mapState(['selected', 'loading']),
     ...mapState('config', ['sync', 'interval']),
-    ...mapGetters(['mailCounts', 'expiredEmails', 'filteredMessages'])
+    ...mapGetters(['mailCounts', 'orphanMsgCount', 'filteredMessages'])
   },
   methods: {
     ...mapActions([
@@ -87,8 +89,8 @@ export default {
       'autoSync'
     ]),
     ...mapMutations({
-      selectAccount: 'SELECT_ACCOUNT',
-      removeAccount: 'REMOVE_ACCOUNT',
+      selectEmail: 'SELECT_EMAIL',
+      removeEmail: 'REMOVE_EMAIL',
       removeMessage: 'REMOVE_MESSAGE'
     }),
     viewMessage(msg) {
@@ -99,16 +101,16 @@ export default {
       this.view = 'list'
     },
     viewAccMessages(email) {
-      this.selectAccount(email)
+      this.selectEmail(email)
       this.view = 'list'
     },
     showConfirmDialog(email) {
       this.email = email
       this.showConfirm = true
     },
-    confirmRemoveAccount() {
+    confirmRemoveEmail() {
       this.showConfirm = false
-      this.removeAccount(this.email)
+      this.removeEmail(this.email)
     }
   },
   watch: {
@@ -120,6 +122,10 @@ export default {
     if (this.sync === 'auto') {
       this.autoSync()
     }
+
+    subscribeToChannel('email_removed', email => {
+      this.removeEmail(email)
+    })
   }
 }
 </script>

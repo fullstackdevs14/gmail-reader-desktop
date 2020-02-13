@@ -10,7 +10,7 @@ import configModule from './config.module'
 Vue.use(Vuex)
 
 const state = {
-  accounts: [],
+  emails: [],
   selected: '',
   syncedAt: 0,
   messages: [],

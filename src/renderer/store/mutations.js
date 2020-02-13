@@ -1,17 +1,14 @@
 import Vue from 'vue'
-import { unionBy, concat } from 'lodash'
+import { union, concat } from 'lodash'
 
 export default {
-  UPSERT_ACCOUNTS(state, accounts) {
-    state.accounts = unionBy(accounts, state.accounts, 'email')
+  ADD_EMAIL(state, email) {
+    state.emails = union(state.emails, [email])
   },
-  UPSERT_ACCOUNT(state, account) {
-    state.accounts = unionBy([account], state.accounts, 'email')
+  REMOVE_EMAIL(state, email) {
+    state.emails = state.emails.filter(item => item !== email)
   },
-  REMOVE_ACCOUNT(state, email) {
-    state.accounts = state.accounts.filter(acc => acc.email !== email)
-  },
-  SELECT_ACCOUNT(state, email) {
+  SELECT_EMAIL(state, email) {
     state.selected = email
   },
   SET_SYNCED_AT(state, time) {

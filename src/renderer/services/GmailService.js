@@ -1,19 +1,8 @@
-import { ipcRenderer } from 'electron'
+import { callIPCMethod } from './ipc'
 
 export default {
-  addAccount: () => callIPCMethod('add_account'),
-  fetchEmails: accounts => callIPCMethod('fetch_emails', accounts),
-  readEmail: (account, msgId) =>
-    callIPCMethod('read_email', { account, msgId }),
+  addEmail: () => callIPCMethod('add_email'),
+  fetchEmails: emails => callIPCMethod('fetch_emails', emails),
+  readEmail: (email, msgId) => callIPCMethod('read_email', { email, msgId }),
   readEmails: payload => callIPCMethod('read_emails', payload)
-}
-
-function callIPCMethod(method, args) {
-  ipcRenderer.send(method, args)
-
-  return new Promise(resolve => {
-    ipcRenderer.once(method + '_callback', (ev, result) => {
-      resolve(result)
-    })
-  })
 }

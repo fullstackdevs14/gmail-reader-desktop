@@ -2,6 +2,7 @@
 
 import { app, BrowserWindow } from 'electron'
 import './ipc'
+import { setMainWindow } from './gmail'
 
 /**
  * Set `__static` path to static files in production
@@ -36,7 +37,10 @@ function createWindow() {
 
   mainWindow.on('closed', () => {
     mainWindow = null
+    setMainWindow(null)
   })
+
+  setMainWindow(mainWindow)
 
   mainWindow.webContents.session.webRequest.onBeforeRequest(
     (details, callback1) => {

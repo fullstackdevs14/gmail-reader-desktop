@@ -2,6 +2,13 @@ import ElectronGoogleOAuth2 from '@dejay/electron-google-oauth2'
 import { google } from 'googleapis'
 import { Base64 } from 'js-base64'
 import { find, unionBy } from 'lodash'
+import { getToken, saveToken, removeToken } from './storage'
+
+let mainWin
+
+export function setMainWindow(window) {
+  mainWin = window
+}
 
 /**
  * Google sign in flow
@@ -23,29 +30,6 @@ export async function googleSignIn() {
   const token = await myApiOauth.openAuthWindowAndGetTokens()
 
   return token
-}
-
-/**
- * Get OAuth2Client from Account Object
- * @param account Account object { token, email }
- * @returns OAuth2Client or null
- */
-async function getAuthFromAccount(account) {
-  try {
-    const { auth, newToken } = await getAuthFromToken(account.token)
-    if (newToken) {
-      account.token = {
-        ...newToken,
-        refresh_token: account.token.refresh_token
-      }
-    }
-
-    return auth
-  } catch (err) {
-    console.log('getAuthFromAccount', err.message || 'Unknown error')
-  }
-
-  return null
 }
 
 /**
@@ -73,75 +57,69 @@ export async function getAuthFromToken(token) {
 }
 
 /**
- * Get Token info from Token Object
- * @param token - Token Object
- * @returns Token info object containing email
+ * Get OAuth2Client from email address. Removes token from storage on failure
+ * @param email Email address
+ * @returns OAuth2Client
+ * @throws Error
  */
-export async function getTokenInfo(token) {
+async function getAuthFromEmail(email) {
   try {
-    const { auth } = await getAuthFromToken(token)
-    const tokenInfo = await auth.getTokenInfo(token.access_token)
-    return tokenInfo
-  } catch (err) {
-    console.log('getTokenInfo', err.message || 'Unknown error')
-  }
-
-  return {}
-}
-
-/**
- * Get unread messages for email
- * @param account Account Object { token, email }
- * @returns Messages array
- */
-export async function getMessagesFromAccount(account) {
-  const auth = await getAuthFromAccount(account)
-
-  if (!auth) {
-    return []
-  }
-
-  const messages = await getMessages(auth)
-
-  return messages.map(msg => ({
-    ...msg,
-    email: account.email
-  }))
-}
-
-/**
- * Get unread messages for all registered accounts
- * @param payload Account object array [ { token, email } ]
- */
-export async function getAllMessags(payload) {
-  let messages = []
-
-  for (let i = 0; i < payload.length; i++) {
-    const auth = await getAuthFromAccount(payload[i])
-    if (!auth) {
-      continue
+    const token = await getToken(email)
+    const { auth, newToken } = await getAuthFromToken(token)
+    if (newToken) {
+      if (!newToken.refresh_token) {
+        newToken.refresh_token = token.refresh_token
+      }
+      await saveToken(email, newToken)
     }
 
-    const msgs = await getMessages(auth)
-    messages = unionBy(
-      messages,
-      msgs.map(msg => ({
-        ...msg,
-        email: payload[i].email
-      })),
-      'id'
-    )
+    return auth
+  } catch (err) {
+    console.log('getAuthFromEmail', err.message || 'Unknown error')
   }
 
-  return messages
+  try {
+    await removeToken(email)
+    if (mainWin) {
+      mainWin.webContents.send('email_removed', email)
+    }
+  } catch (err) {
+    console.log('getAuthFromEmail', err.message || 'Unknown error')
+  }
+
+  throw new Error('Token invalid')
+}
+
+/**
+ * Sign In and fetch messages
+ * @returns { email, messages }
+ * @throws Error
+ */
+export async function signInAndFetch() {
+  try {
+    const token = await googleSignIn()
+    const { auth } = await getAuthFromToken(token)
+    const tokenInfo = await auth.getTokenInfo(token.access_token)
+    await saveToken(tokenInfo.email, token)
+    const messages = await getMessages(tokenInfo.email, auth)
+
+    return {
+      email: tokenInfo.email,
+      messages
+    }
+  } catch (err) {
+    console.log('getAuthFromEmail', err.message || 'Unknown error')
+    throw err
+  }
 }
 
 /**
  * Get unread messages
+ * @param email Email address
  * @param auth OAuth2Client
  * @returns Messages array
  */
-async function getMessages(auth) {
+async function getMessages(email, auth) {
   try {
     const gmail = google.gmail({ version: 'v1', auth })
 
@@ -195,7 +173,8 @@ async function getMessages(auth) {
             subject: find(msg.payload.headers, { name: 'Subject' }).value,
             from: find(msg.payload.headers, { name: 'From' }).value,
             to: find(msg.payload.headers, { name: 'To' }).value,
-            text: body
+            text: body,
+            email
           }
         })
       )
@@ -210,17 +189,46 @@ async function getMessages(auth) {
 }
 
 /**
+ * Get unread messages
+ * @param email Email address
+ * @param auth OAuth2Client
+ * @returns Messages array
+ */
+async function getMessagesFromEmail(email) {
+  try {
+    const auth = await getAuthFromEmail(email)
+    return await getMessages(email, auth)
+  } catch (err) {
+    console.log('getEmails', err.message || 'Unknown error')
+  }
+
+  return []
+}
+
+/**
+ * Get unread messages for all registered emails
+ * @param emails Email addresses
+ */
+export async function getAllMessags(emails) {
+  let messages = []
+
+  for (let i = 0; i < emails.length; i++) {
+    const msgs = await getMessagesFromEmail(emails[i])
+
+    messages = unionBy(messages, msgs, 'id')
+  }
+
+  return messages
+}
+
+/**
  * Mark a message as READ
- * @param account Account Object
+ * @param email Email address
  * @param msgId Message Id to read
  */
-export async function readMessage(account, msgId) {
+export async function readMessage(email, msgId) {
   try {
-    const auth = await getAuthFromAccount(account)
-    if (!auth) {
-      return
-    }
-
+    const auth = await getAuthFromEmail(email)
     const gmail = google.gmail({ version: 'v1', auth })
 
     await gmail.users.messages.modify({
@@ -236,24 +244,13 @@ export async function readMessage(account, msgId) {
 }
 
 /**
- * Mark all messages as READ
- * @param payload [ { account, msgIds } ]
- */
-export async function readMessages(payload) {
-  for (let i = 0; i < payload.length; i++) {
-    await readMultipleMessages(payload[i].account, payload[i].msgIds)
-  }
-}
-
-/**
  * Mark multiple messages for an email
- * @param account Account object { token, email }
+ * @param email Email address
  * @param msgIds Message IDs array
  */
-async function readMultipleMessages(account, msgIds) {
+async function readMessages(email, msgIds) {
   try {
-    const auth = await getAuthFromAccount(account)
-
+    const auth = await getAuthFromEmail(email)
     const gmail = google.gmail({ version: 'v1', auth })
 
     await gmail.users.messages.batchModify({
@@ -264,6 +261,16 @@ async function readMultipleMessages(account, msgIds) {
       }
     })
   } catch (err) {
-    console.log('readMultipleMessages', err.message || 'Unknown error')
+    console.log('readMessages', err.message || 'Unknown error')
+  }
+}
+
+/**
+ * Mark all messages as READ
+ * @param payload [ { email, msgIds } ]
+ */
+export async function readEmails(payload) {
+  for (let i = 0; i < payload.length; i++) {
+    await readMessages(payload[i].email, payload[i].msgIds)
   }
 }
