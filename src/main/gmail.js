@@ -277,6 +277,27 @@ export async function readEmails(payload) {
   }
 }
 
+let timer
+/**
+ *
+ * @param config.sync 'manual' or 'auto'
+ * @param config.interval Interval in seconds
+ * @param emails Emails
+ */
+export async function autoSync({ config, emails }) {
+  if (config.sync === 'auto' && emails && emails.length > 0) {
+    if (timer) {
+      clearInterval(timer)
+    }
+    timer = setTimeout(() => {
+      getAllMessags(emails).then(() => {})
+    }, config.interval * 1000)
+  } else if (timer) {
+    clearInterval(timer)
+    timer = null
+  }
+}
+
 async function filterNewMessages(messages) {
   if (!messageIds) {
     messageIds = await Storage.get('messages')

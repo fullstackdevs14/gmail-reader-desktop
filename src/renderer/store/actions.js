@@ -13,6 +13,13 @@ export async function addEmail({ commit, dispatch }) {
   commit('ADD_EMAIL', email)
   dispatch('addMessages', messages)
   commit('SET_LOADING', false)
+
+  dispatch('autoSync')
+}
+
+export async function removeEmail({ commit, dispatch }, email) {
+  commit('REMOVE_EMAIL', email)
+  dispatch('autoSync')
 }
 
 export async function getAllMessages({ state, commit, dispatch }, hideLoading) {
@@ -78,18 +85,9 @@ export function removeReadFilteredMessages({ commit, getters }) {
   commit('REMOVE_MESSAGES', msgIds)
 }
 
-let timer
-export function autoSync({ dispatch, state }) {
-  if (state.config.sync === 'auto') {
-    if (timer) {
-      clearInterval(timer)
-    }
-
-    const interval = (+state.config.interval || 30) * 1000
-    timer = setInterval(() => {
-      dispatch('getAllMessages', true)
-    }, interval)
-  } else {
-    clearInterval(timer)
-  }
+export async function autoSync({ state }) {
+  await GmailService.autoSync({
+    config: state.config,
+    emails: state.emails
+  })
 }

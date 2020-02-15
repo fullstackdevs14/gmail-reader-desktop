@@ -1,5 +1,11 @@
 import { ipcMain } from 'electron'
-import { signInAndFetch, getAllMessags, readEmails, readMessage } from './gmail'
+import {
+  signInAndFetch,
+  getAllMessags,
+  readEmails,
+  readMessage,
+  autoSync
+} from './gmail'
 
 ipcMain.on('add_email', event => {
   signInAndFetch()
@@ -26,5 +32,11 @@ ipcMain.on('read_email', (event, args) => {
 ipcMain.on('read_emails', (event, args) => {
   readEmails(args).then(() => {
     event.reply('read_emails_callback')
+  })
+})
+
+ipcMain.on('auto_sync', (event, args) => {
+  autoSync(args).then(() => {
+    event.reply('auto_sync_callback')
   })
 })
