@@ -2,7 +2,7 @@ import ElectronGoogleOAuth2 from '@dejay/electron-google-oauth2'
 import { google } from 'googleapis'
 import { Base64 } from 'js-base64'
 import { find, unionBy } from 'lodash'
-import { getToken, saveToken, removeToken } from './storage'
+import Storage from './storage'
 
 let mainWin
 
@@ -64,13 +64,13 @@ export async function getAuthFromToken(token) {
  */
 async function getAuthFromEmail(email) {
   try {
-    const token = await getToken(email)
+    const token = await Storage.get(email)
     const { auth, newToken } = await getAuthFromToken(token)
     if (newToken) {
       if (!newToken.refresh_token) {
         newToken.refresh_token = token.refresh_token
       }
-      await saveToken(email, newToken)
+      await Storage.set(email, newToken)
     }
 
     return auth
@@ -79,7 +79,7 @@ async function getAuthFromEmail(email) {
   }
 
   try {
-    await removeToken(email)
+    await Storage.remove(email)
     if (mainWin) {
       mainWin.webContents.send('email_removed', email)
     }
@@ -100,7 +100,7 @@ export async function signInAndFetch() {
     const token = await googleSignIn()
     const { auth } = await getAuthFromToken(token)
     const tokenInfo = await auth.getTokenInfo(token.access_token)
-    await saveToken(tokenInfo.email, token)
+    await Storage.set(tokenInfo.email, token)
     const messages = await getMessages(tokenInfo.email, auth)
 
     return {
