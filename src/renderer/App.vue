@@ -88,7 +88,8 @@ export default {
       'autoSync',
       'removeEmail',
       'addMessages',
-      'removeMessage'
+      'removeMessage',
+      'getPendingMessages'
     ]),
     ...mapMutations({
       selectEmail: 'SELECT_EMAIL'
@@ -119,6 +120,8 @@ export default {
     }
   },
   mounted() {
+    this.getPendingMessages()
+
     if (this.sync === 'auto') {
       this.autoSync()
     }

@@ -306,6 +306,13 @@ export async function removeMessages(msgIds) {
   await Storage.set('messages', messageIds)
 }
 
+export async function getPendingMessages() {
+  const temp = pendingMessages.slice()
+  pendingMessages = []
+  await Storage.set('pending', pendingMessages)
+  return temp
+}
+
 async function streamNewMessages(messages) {
   if (!messageIds) {
     messageIds = await Storage.getArray('messages')

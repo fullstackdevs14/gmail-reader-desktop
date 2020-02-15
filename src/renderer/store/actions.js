@@ -94,3 +94,8 @@ export async function removeMessages({ commit }, msgIds) {
   await GmailService.removeMessages(msgIds)
   commit('REMOVE_MESSAGES', msgIds)
 }
+
+export async function getPendingMessages({ dispatch }) {
+  const messages = await GmailService.getPendingMessages()
+  dispatch('addMessages', messages)
+}
