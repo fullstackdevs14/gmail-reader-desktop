@@ -2,7 +2,7 @@ import ElectronGoogleOAuth2 from '@dejay/electron-google-oauth2'
 import { google } from 'googleapis'
 import { Base64 } from 'js-base64'
 import notifier from 'node-notifier'
-import { find, unionBy, concat } from 'lodash'
+import { find, unionBy, concat, difference } from 'lodash'
 import Storage from './storage'
 
 let messageIds = null
@@ -301,7 +301,7 @@ export async function autoSync({ config, emails }) {
 }
 
 export async function removeMessages(msgIds) {
-  messageIds = messageIds.filter(msgId => msgIds.indexOf(id => msgId === id))
+  messageIds = difference(messageIds, msgIds)
   await Storage.set('messages', messageIds)
 }
 
