@@ -296,7 +296,8 @@ async function filterNewMessages(messages) {
   if (newMessages.length > 0) {
     notifier.notify({
       title: 'Gmail Reader',
-      message: `${newMessages.length} new mail(s) arrived`
+      message: `${newMessages.length} new mail(s) arrived`,
+      icon: 'build/icons/256x256.png'
     })
   }
 
