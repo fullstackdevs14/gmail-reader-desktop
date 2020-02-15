@@ -32,13 +32,6 @@ export function addMessages({ state, commit }, messages) {
   const allMsgIds = state.messages.map(msg => msg.id)
   const newMessages = messages.filter(msg => !allMsgIds.includes(msg.id))
   commit('ADD_MESSAGES', newMessages)
-
-  if (state.config.sync === 'auto' && newMessages.length > 0) {
-    // eslint-disable-next-line
-    new Notification(`Gmail Reader`, {
-      body: `${newMessages.length} new email(s) arrived`
-    })
-  }
 }
 
 export async function readMessage({ commit, state }, msg) {

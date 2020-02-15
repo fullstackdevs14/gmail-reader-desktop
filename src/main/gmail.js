@@ -1,6 +1,7 @@
 import ElectronGoogleOAuth2 from '@dejay/electron-google-oauth2'
 import { google } from 'googleapis'
 import { Base64 } from 'js-base64'
+import notifier from 'node-notifier'
 import { find, unionBy, concat } from 'lodash'
 import Storage from './storage'
 
@@ -106,7 +107,7 @@ export async function signInAndFetch() {
 
     return {
       email: tokenInfo.email,
-      messages
+      messages: await filterNewMessages(messages)
     }
   } catch (err) {
     console.log('getAuthFromEmail', err.message || 'Unknown error')
@@ -219,18 +220,7 @@ export async function getAllMessags(emails) {
     messages = unionBy(messages, msgs, 'id')
   }
 
-  if (!messageIds) {
-    messageIds = Storage.get('messages')
-  }
-
-  const newMessages = messages.filter(msg => messageIds.indexOf(msg.id) < 0)
-
-  messageIds = concat(
-    messageIds,
-    newMessages.map(msg => msg.id)
-  )
-
-  return newMessages
+  return filterNewMessages(messages)
 }
 
 /**
@@ -285,4 +275,30 @@ export async function readEmails(payload) {
   for (let i = 0; i < payload.length; i++) {
     await readMessages(payload[i].email, payload[i].msgIds)
   }
+}
+
+async function filterNewMessages(messages) {
+  if (!messageIds) {
+    messageIds = await Storage.get('messages')
+    if (!messageIds[0]) {
+      messageIds = []
+    }
+  }
+
+  const newMessages = messages.filter(msg => messageIds.indexOf(msg.id) < 0)
+
+  messageIds = concat(
+    messageIds,
+    newMessages.map(msg => msg.id)
+  )
+  await Storage.set('messages', messageIds)
+
+  if (newMessages.length > 0) {
+    notifier.notify({
+      title: 'Gmail Reader',
+      message: `${newMessages.length} new mail(s) arrived`
+    })
+  }
+
+  return newMessages
 }
