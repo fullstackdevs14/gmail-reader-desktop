@@ -4,7 +4,8 @@ import {
   getAllMessags,
   readEmails,
   readMessage,
-  autoSync
+  autoSync,
+  removeMessages
 } from './gmail'
 
 ipcMain.on('add_email', event => {
@@ -38,5 +39,11 @@ ipcMain.on('read_emails', (event, args) => {
 ipcMain.on('auto_sync', (event, args) => {
   autoSync(args).then(() => {
     event.reply('auto_sync_callback')
+  })
+})
+
+ipcMain.on('remove_messages', (event, args) => {
+  removeMessages(args).then(() => {
+    event.reply('remove_messages_callback')
   })
 })

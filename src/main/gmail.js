@@ -300,6 +300,11 @@ export async function autoSync({ config, emails }) {
   }
 }
 
+export async function removeMessages(msgIds) {
+  messageIds = messageIds.filter(msgId => msgIds.indexOf(id => msgId === id))
+  await Storage.set('messages', messageIds)
+}
+
 async function streamNewMessages(messages) {
   if (!messageIds) {
     messageIds = await Storage.getArray('messages')

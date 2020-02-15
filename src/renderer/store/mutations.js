@@ -32,9 +32,6 @@ export default {
       return msg
     })
   },
-  REMOVE_MESSAGE(state, msgId) {
-    state.messages = state.messages.filter(msg => msg.id !== msgId)
-  },
   REMOVE_MESSAGES(state, msgIds) {
     state.messages = state.messages.filter(msg => msgIds.indexOf(msg.id) < 0)
   },

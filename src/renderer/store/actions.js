@@ -71,11 +71,11 @@ export async function readAllFilteredMessages({ commit, getters, state }) {
   commit('SET_LOADING', false)
 }
 
-export function removeReadFilteredMessages({ commit, getters }) {
+export function removeReadFilteredMessages({ dispatch, getters }) {
   const msgIds = getters.filteredMessages
     .filter(msg => msg.read)
     .map(msg => msg.id)
-  commit('REMOVE_MESSAGES', msgIds)
+  dispatch('removeMessages', msgIds)
 }
 
 export async function autoSync({ state }) {
@@ -83,4 +83,14 @@ export async function autoSync({ state }) {
     config: state.config,
     emails: state.emails
   })
+}
+
+export async function removeMessage({ commit }, msgId) {
+  await GmailService.removeMessages([msgId])
+  commit('REMOVE_MESSAGES', [msgId])
+}
+
+export async function removeMessages({ commit }, msgIds) {
+  await GmailService.removeMessages(msgIds)
+  commit('REMOVE_MESSAGES', msgIds)
 }

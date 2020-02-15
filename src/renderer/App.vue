@@ -87,11 +87,11 @@ export default {
       'removeReadFilteredMessages',
       'autoSync',
       'removeEmail',
-      'addMessages'
+      'addMessages',
+      'removeMessage'
     ]),
     ...mapMutations({
-      selectEmail: 'SELECT_EMAIL',
-      removeMessage: 'REMOVE_MESSAGE'
+      selectEmail: 'SELECT_EMAIL'
     }),
     viewMessage(msg) {
       this.details = msg
