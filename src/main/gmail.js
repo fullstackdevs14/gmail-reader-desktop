@@ -1,9 +1,10 @@
 import ElectronGoogleOAuth2 from '@dejay/electron-google-oauth2'
 import { google } from 'googleapis'
 import { Base64 } from 'js-base64'
-import { find, unionBy } from 'lodash'
+import { find, unionBy, concat } from 'lodash'
 import Storage from './storage'
 
+let messageIds = null
 let mainWin
 
 export function setMainWindow(window) {
@@ -218,7 +219,18 @@ export async function getAllMessags(emails) {
     messages = unionBy(messages, msgs, 'id')
   }
 
-  return messages
+  if (!messageIds) {
+    messageIds = Storage.get('messages')
+  }
+
+  const newMessages = messages.filter(msg => messageIds.indexOf(msg.id) < 0)
+
+  messageIds = concat(
+    messageIds,
+    newMessages.map(msg => msg.id)
+  )
+
+  return newMessages
 }
 
 /**
