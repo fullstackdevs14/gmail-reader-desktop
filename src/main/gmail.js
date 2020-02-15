@@ -2,7 +2,7 @@ import ElectronGoogleOAuth2 from '@dejay/electron-google-oauth2'
 import { google } from 'googleapis'
 import { Base64 } from 'js-base64'
 import notifier from 'node-notifier'
-import { find, unionBy, concat, difference } from 'lodash'
+import _ from 'lodash'
 import Storage from './storage'
 
 let messageIds = null
@@ -150,17 +150,18 @@ async function getMessages(email, auth) {
         continue
       }
 
-      messages = messages.concat(
+      messages = _.concat(
+        messages,
         threadObj.messages.map(msg => {
           let body = ''
           if (msg.payload.body.data) {
             body = msg.payload.body.data
           } else {
-            const htmlPart = find(msg.payload.parts, { mimeType: 'text/html' })
+            const htmlPart = _.find(msg.payload.parts, { mimeType: 'text/html' })
             if (htmlPart) {
               body = htmlPart.body.data
             } else {
-              const textPart = find(msg.payload.parts, {
+              const textPart = _.find(msg.payload.parts, {
                 mimeType: 'text/plain'
               })
               body = textPart.body.data
@@ -174,9 +175,9 @@ async function getMessages(email, auth) {
             labels: msg.labelIds,
             snippet: msg.snippet,
             internalDate: msg.internalDate,
-            subject: find(msg.payload.headers, { name: 'Subject' }).value,
-            from: find(msg.payload.headers, { name: 'From' }).value,
-            to: find(msg.payload.headers, { name: 'To' }).value,
+            subject: _.find(msg.payload.headers, { name: 'Subject' }).value,
+            from: _.find(msg.payload.headers, { name: 'From' }).value,
+            to: _.find(msg.payload.headers, { name: 'To' }).value,
             text: body,
             email
           }
@@ -219,7 +220,7 @@ export async function getAllMessags(emails) {
   for (let i = 0; i < emails.length; i++) {
     const msgs = await getMessagesFromEmail(emails[i])
 
-    messages = unionBy(messages, msgs, 'id')
+    messages = _.unionBy(messages, msgs, 'id')
   }
 
   streamNewMessages(messages)
@@ -301,7 +302,7 @@ export async function autoSync({ config, emails }) {
 }
 
 export async function removeMessages(msgIds) {
-  messageIds = difference(messageIds, msgIds)
+  messageIds = _.difference(messageIds, msgIds)
   await Storage.set('messages', messageIds)
 }
 
@@ -312,7 +313,7 @@ async function streamNewMessages(messages) {
 
   const newMessages = messages.filter(msg => messageIds.indexOf(msg.id) < 0)
 
-  messageIds = concat(
+  messageIds = _.concat(
     messageIds,
     newMessages.map(msg => msg.id)
   )
