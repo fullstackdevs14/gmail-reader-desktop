@@ -84,10 +84,10 @@ export default {
     ...mapActions([
       'readMessage',
       'readAllFilteredMessages',
-      'getAllMessages',
       'removeReadFilteredMessages',
       'autoSync',
-      'removeEmail'
+      'removeEmail',
+      'addMessages'
     ]),
     ...mapMutations({
       selectEmail: 'SELECT_EMAIL',
@@ -125,6 +125,9 @@ export default {
 
     subscribeToChannel('email_removed', email => {
       this.removeEmail(email)
+    })
+    subscribeToChannel('messages', messages => {
+      this.addMessages(messages)
     })
   }
 }

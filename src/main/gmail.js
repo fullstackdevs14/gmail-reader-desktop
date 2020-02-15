@@ -6,6 +6,7 @@ import { find, unionBy, concat } from 'lodash'
 import Storage from './storage'
 
 let messageIds = null
+let pendingMessages = []
 let mainWin
 
 export function setMainWindow(window) {
@@ -105,9 +106,10 @@ export async function signInAndFetch() {
     await Storage.set(tokenInfo.email, token)
     const messages = await getMessages(tokenInfo.email, auth)
 
+    streamNewMessages(messages)
+
     return {
-      email: tokenInfo.email,
-      messages: await filterNewMessages(messages)
+      email: tokenInfo.email
     }
   } catch (err) {
     console.log('getAuthFromEmail', err.message || 'Unknown error')
@@ -220,7 +222,7 @@ export async function getAllMessags(emails) {
     messages = unionBy(messages, msgs, 'id')
   }
 
-  return filterNewMessages(messages)
+  streamNewMessages(messages)
 }
 
 /**
@@ -298,12 +300,9 @@ export async function autoSync({ config, emails }) {
   }
 }
 
-async function filterNewMessages(messages) {
+async function streamNewMessages(messages) {
   if (!messageIds) {
-    messageIds = await Storage.get('messages')
-    if (!messageIds[0]) {
-      messageIds = []
-    }
+    messageIds = await Storage.getArray('messages')
   }
 
   const newMessages = messages.filter(msg => messageIds.indexOf(msg.id) < 0)
@@ -320,7 +319,17 @@ async function filterNewMessages(messages) {
       message: `${newMessages.length} new mail(s) arrived`,
       icon: 'build/icons/256x256.png'
     })
-  }
 
-  return newMessages
+    if (!pendingMessages) {
+      pendingMessages = await Storage.getArray('pending')
+    }
+
+    if (mainWin) {
+      mainWin.webContents.send('messages', [...pendingMessages, ...newMessages])
+      pendingMessages = []
+    } else {
+      pendingMessages = [...pendingMessages, ...newMessages]
+    }
+    await Storage.set('pending', pendingMessages)
+  }
 }

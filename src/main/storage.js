@@ -1,10 +1,11 @@
 import storage from 'electron-json-storage'
 import util from 'util'
 
-console.log(storage.getDataPath())
+const getAsync = util.promisify(storage.get)
 
 export default {
-  get: util.promisify(storage.get),
+  get: getAsync,
   set: util.promisify(storage.set),
-  remove: util.promisify(storage.remove)
+  remove: util.promisify(storage.remove),
+  getArray: key => getAsync(key).then(data => (!data[0] ? [] : data))
 }

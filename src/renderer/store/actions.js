@@ -3,7 +3,7 @@ import { values } from 'lodash'
 
 export async function addEmail({ commit, dispatch }) {
   commit('SET_LOADING', true)
-  const { err, email, messages } = await GmailService.addEmail()
+  const { err, email } = await GmailService.addEmail()
   if (err) {
     commit('SET_LOADING', false)
     console.log('Login failed', err)
@@ -11,7 +11,6 @@ export async function addEmail({ commit, dispatch }) {
   }
 
   commit('ADD_EMAIL', email)
-  dispatch('addMessages', messages)
   commit('SET_LOADING', false)
 
   dispatch('autoSync')
@@ -22,23 +21,17 @@ export async function removeEmail({ commit, dispatch }, email) {
   dispatch('autoSync')
 }
 
-export async function getAllMessages({ state, commit, dispatch }, hideLoading) {
-  if (!hideLoading) {
-    commit('SET_LOADING', true)
-  }
-  const messages = await GmailService.fetchEmails(state.emails)
-  dispatch('addMessages', messages)
-  commit('SET_SYNCED_AT', new Date().getTime())
-
-  if (!hideLoading) {
-    commit('SET_LOADING', false)
-  }
+export async function getAllMessages({ state, commit }) {
+  commit('SET_LOADING', true)
+  await GmailService.fetchEmails(state.emails)
+  commit('SET_LOADING', false)
 }
 
 export function addMessages({ state, commit }, messages) {
   const allMsgIds = state.messages.map(msg => msg.id)
   const newMessages = messages.filter(msg => !allMsgIds.includes(msg.id))
   commit('ADD_MESSAGES', newMessages)
+  commit('SET_SYNCED_AT', new Date().getTime())
 }
 
 export async function readMessage({ commit, state }, msg) {
