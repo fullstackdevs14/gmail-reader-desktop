@@ -6,6 +6,7 @@
           type="is-dark"
           icon-left="arrow-left"
           outlined
+          rounded
           @click="$emit('close')"
           )
       .column
@@ -70,7 +71,6 @@ export default {
   }
 }
 .back {
-  border-radius: 50%;
   margin-right: 0.5em;
 
   &.button.is-dark.is-outlined {

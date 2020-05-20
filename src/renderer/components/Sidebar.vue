@@ -13,7 +13,7 @@
       )
       span {{ item }}
       span.badge(v-if="counts[item] > 0") {{ counts[item] }}
-      b-button.remove(icon-left="times-circle" @click="$emit('remove', item)")
+      b-button.remove(icon-left="times-circle" rounded @click="$emit('remove', item)")
     b-button.has-margin-top-4.is-full-width(
       type="is-info"
       icon-left="plus-circle"
@@ -48,7 +48,7 @@
         )
         span {{ item }}
         span.badge(v-if="counts[item] > 0") {{ counts[item] }}
-        b-button.remove(icon-left="times-circle" @click="$emit('remove', item)")
+        b-button.remove(icon-left="times-circle" rounded @click="$emit('remove', item)")
 </template>
 
 <script>
@@ -109,6 +109,7 @@ export default {
 
   .remove {
     opacity: 0;
+    padding: 0;
   }
 
   &:hover,

@@ -29,3 +29,12 @@ html {
 #app {
   height: 100%;
 }
+
+.button.is-rounded {
+  border-radius: 50%;
+  padding: 5px;
+
+  .icon {
+    margin: 0 !important;
+  }
+}

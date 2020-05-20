@@ -15,6 +15,7 @@
         b-button(
           type="is-info"
           icon-left="envelope-open-text"
+          rounded
           @click="readMessage")
       b-tooltip.has-margin-left-2(
         label="Delete"
@@ -26,6 +27,7 @@
         b-button(
           type="is-danger"
           icon-left="trash-alt"
+          rounded
           @click="deleteMessage")
 </template>
 
@@ -91,9 +93,6 @@ export default {
   .snippet {
     color: $grey-light;
     letter-spacing: 0.02em;
-  }
-  button {
-    border-radius: 50%;
   }
 
   &.read {
